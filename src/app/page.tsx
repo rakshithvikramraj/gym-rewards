@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Terminal, FileText, Gift, CheckCircle2, HardDrive } from 'lucide-react';
-import { Navbar } from '@/components/ui/navbar';
 
 interface Feedback { type: 'success' | 'error'; message: string | JSX.Element; }
 
