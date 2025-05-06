@@ -128,7 +128,7 @@ export default function CouponsPage() {
           {/* Feedback Area */}
           {feedback && (
             <Alert variant={feedback.type === 'error' ? 'destructive' : 'default'}
-              // Neobrutalism Alert: Consistent styling
+              // Neobrutalist Alert
               className={`mb-6 animate-fadeIn rounded-none border-2 border-black ${feedback.type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`}>
               {feedback.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <Terminal className="h-4 w-4" />}
               <AlertTitle className="font-bold uppercase">{feedback.type === 'error' ? 'Error' : 'Success'}</AlertTitle>
@@ -190,7 +190,6 @@ export default function CouponsPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              // Neobrutalism Button (View): Consistent styling
                               className={`h-8 px-3 py-1 text-xs rounded-none border-2 border-black bg-blue-500 text-white font-bold shadow-[2px_2px_0_0_#000] hover:shadow-[1px_1px_0_0_#000] active:shadow-none transition-all duration-150 ease-in-out inline-flex items-center justify-center gap-1`}
                             >
                               <Eye className="h-3 w-3" />
@@ -202,10 +201,9 @@ export default function CouponsPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            // Neobrutalism Button (Generate): Consistent styling
-                            className={`h-8 px-3 py-1 text-xs rounded-none border-2 border-black bg-yellow-400 text-black font-bold shadow-[2px_2px_0_0_#000] hover:shadow-[1px_1px_0_0_#000] active:shadow-none transition-all duration-150 ease-in-out inline-flex items-center justify-center gap-1 disabled:bg-gray-400 disabled:shadow-none disabled:cursor-not-allowed`}
                             onClick={() => handleGenerateCouponClick(user.userId)}
-                            disabled={couponLoadingUserId === user.userId}
+                            disabled={couponLoadingUserId === user.userId || user.rewardScore < 1} // Disable if loading or score < 1
+                            className={`h-8 px-3 py-1 text-xs rounded-none border-2 border-black bg-yellow-400 text-black font-bold shadow-[2px_2px_0_0_#000] hover:shadow-[1px_1px_0_0_#000] active:shadow-none disabled:opacity-60 disabled:shadow-[2px_2px_0_0_#9ca3af] disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-150 ease-in-out inline-flex items-center justify-center gap-1`}
                           >
                             {couponLoadingUserId === user.userId ? (
                               <Loader2 className="h-3 w-3 animate-spin" />

@@ -116,6 +116,11 @@ const CouponTicket: React.FC<CouponTicketProps> = ({ coupon }) => {
   }, [coupon]);
   // -----------------------------------------
 
+   // Construct the verification URL
+   const verificationUrl = typeof window !== 'undefined' 
+   ? `${window.location.origin}/coupons/${coupon.couponCode}/verify` 
+   : `/coupons/${coupon.couponCode}/verify`;
+
   return (
     // Add relative positioning for the cutout divs
     <div ref={ticketRef} className="relative bg-white border-2 border-black shadow-[4px_4px_0_0_#000] overflow-hidden flex flex-col sm:flex-row">
@@ -181,7 +186,7 @@ const CouponTicket: React.FC<CouponTicketProps> = ({ coupon }) => {
       {/* Right Side - QR Code Stub */}
       <div className="p-4 bg-gray-100 flex flex-col items-center justify-center w-full sm:w-32 flex-shrink-0">
         <QRCodeSVG 
-          value={coupon.couponCode} 
+          value={verificationUrl} 
           size={80} 
           level={"H"} 
           bgColor={"#f3f4f6"} 
