@@ -5,9 +5,9 @@ import { eq } from 'drizzle-orm';
 
 // Define the expected shape of the route parameters
 interface RouteParams {
-  params: {
+  params: Promise<{
     couponCode: string;
-  };
+  }>;
 }
 
 // Define the response structure (matching frontend's CouponDetails)

@@ -64,7 +64,7 @@ export default function AdminPage() {
       }
 
       if (result.errors && result.errors.length > 0) {
-          const errorMessages = result.errors.map((e: any) => e.message || 'Unknown error').join('; ');
+          const errorMessages = result.errors.map((e: { message?: string }) => e.message || 'Unknown error').join('; ');
           setFeedback({ type: 'error', message: `Processing completed with errors: ${errorMessages}` });
       } else {
           setFeedback({ type: 'success', message: result.message || 'Files processed successfully!' });
@@ -75,9 +75,15 @@ export default function AdminPage() {
       if (userFileInputRef.current) userFileInputRef.current.value = '';
       if (eventFileInputRef.current) eventFileInputRef.current.value = '';
 
-    } catch (error: any) {
+    } catch (error: unknown) { 
       console.error('Upload failed:', error);
-      setFeedback({ type: 'error', message: error.message || 'An unexpected error occurred during upload.' });
+      let errorMessage = 'An unexpected error occurred during upload.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string') {
+        errorMessage = error.message;
+      }
+      setFeedback({ type: 'error', message: errorMessage });
     } finally {
       setIsLoading(false);
     }
