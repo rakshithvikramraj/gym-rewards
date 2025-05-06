@@ -36,7 +36,7 @@ graph TD
 *   **Coupon Generation:** Generate tiered coupons (Bronze, Silver, Gold, etc.) for users based on criteria (e.g., reward score).
 *   **Coupon Verification:** Verify the status (valid, expired, redeemed, not found) of a coupon via its code.
 *   **Coupon Redemption:** Mark coupons as redeemed (functionality present in UI).
-*   **AI Coupon Image Generation:** Generate unique images for coupons using an AI service.
+*   **AI Coupon Image Generation:** Generate unique images for coupons using an AI service using Google Gemini API.
 *   **Tiered Rewards:** Supports different coupon tiers.
 *   **Neobrutalism UI:** Modern user interface with a distinct Neobrutalism style.
 
@@ -113,8 +113,8 @@ Create a `.env.local` file in the root directory and add the following variables
 DATABASE_URL="postgresql://user:password@host:port/database?sslmode=require"
 
 # Add any other required variables, e.g., API keys for AI image generation
-# OPENAI_API_KEY="..."
-# OTHER_SERVICE_API_KEY="..."
+# GEMINI_API_KEY="..."
+=
 ```
 
 **Note:** `.env.local` is ignored by Git by default (`.gitignore`). **Never commit this file.**
@@ -142,14 +142,68 @@ The application will typically be available at [http://localhost:3000](http://lo
 | POST   | `/api/generate-coupon`               | Generates a coupon for a specified user ID.        |
 | GET    | `/api/coupons/[userId]`              | Retrieves coupons associated with a specific user. |
 | GET    | `/api/coupons/verify/[couponCode]`   | Verifies the status and details of a coupon code.  |
-| POST   | `/api/coupons/redeem/[couponCode]`   | Marks a coupon as redeemed (Endpoint assumed).     |
-| POST   | `/api/generate-ai-coupon-image`      | Generates an AI image for a coupon (details TBC). |
+| POST   | `/api/generate-ai-coupon-image`      | Generates an AI image for a coupon. |
 
 ## Database Schema
 
-The database schema is defined using Drizzle ORM. Key tables likely include `users`, `coupons`, and potentially `events`.
+```mermaid
+erDiagram
+    users {
+        serial id PK
+        text userId UK "Unique User ID"
+        text username UK
+        text fullName
+        text socialProfile
+        text address
+        integer rewardScore
+        text referralCode UK
+        timestamp createdAt
+        timestamp updatedAt
+    }
 
-Refer to `src/lib/db/schema.ts` for the detailed table definitions and relationships.
+    events {
+        serial id PK
+        text eventId UK "Unique Event ID"
+        text userId FK "References users.userId"
+        eventTypeEnum eventType "checkin, share_promo, etc."
+        timestamp eventDate
+        integer pointsAwarded
+        varchar relatedReferralCode
+        jsonb details
+        integer durationInMinutes
+        text serviceUsed
+        text trainingType
+        text platformShared
+        text linkShared
+        text referralCode
+    }
+
+    coupons {
+        serial couponId PK
+        varchar couponCode UK "Unique Coupon Code"
+        text userId FK "References users.userId"
+        tierEnum tier "None, Silver, Gold, Diamond"
+        integer scoreAtIssuance
+        timestamp issuedAt
+        timestamp expiresAt
+        couponStatusEnum status "Active, Redeemed, Expired"
+        timestamp redeemedAt
+    }
+
+    users ||--o{ events : "logs"
+    users ||--o{ coupons : "receives"
+```
+
+## Features
+
+*   **CSV Data Processing:** Upload and process CSV files containing user and event data.
+*   **User Management:** View a list of users and their reward scores.
+*   **Coupon Generation:** Generate tiered coupons (Bronze, Silver, Gold, etc.) for users based on criteria (e.g., reward score).
+*   **Coupon Verification:** Verify the status (valid, expired, redeemed, not found) of a coupon via its code.
+*   **Coupon Redemption:** Mark coupons as redeemed (functionality present in UI).
+*   **AI Coupon Image Generation:** Generate unique images for coupons using an AI service.
+*   **Tiered Rewards:** Supports different coupon tiers.
+*   **Neobrutalism UI:** Modern user interface with a distinct Neobrutalism style.
 
 ## Styling
 
