@@ -101,25 +101,36 @@ async function upsertEventRecords(csvData: { data: EventCsvRow[]; errors: Proces
             return; // Skip this row
         }
 
-        // 2. Validate and Parse Date (Robustly)
-        let parsedDate: Date;
+        // 2. Validate and Parse Date/Time (Robustly)
+        let parsedDateTime: Date; // Renamed for clarity
         try {
-            const dateValue = event.event_date;
-            if (typeof dateValue !== 'string' || !dateValue) {
-                 throw new Error(`Missing or invalid date value`);
+            const dateStr = event.event_date;
+            const timeStr = event.event_time; // Get the time string
+
+            // Check if both date and time strings are present and valid
+            if (typeof dateStr !== 'string' || !dateStr) {
+                throw new Error(`Missing or invalid event_date value`);
             }
-            parsedDate = new Date(dateValue);
-            if (isNaN(parsedDate.getTime())) {
-               throw new Error(`Unparseable date format: '${dateValue}'`);
+            if (typeof timeStr !== 'string' || !timeStr) {
+                // Consider if time is optional? For now, assume required based on requiredFields in parseCsvFile call.
+                throw new Error(`Missing or invalid event_time value`);
             }
-            // Check if the source of the date error memory is addressed
-            // If toISOString() is called *later* on this parsedDate, it should work.
-            // If the error comes from elsewhere, this won't fix it.
+
+            // Combine date and time strings (adjust format if needed based on CSV content)
+            // Example: If date is 'YYYY-MM-DD' and time is 'HH:MM:SS'
+            const dateTimeString = `${dateStr} ${timeStr}`;
+
+            parsedDateTime = new Date(dateTimeString); // Parse combined string
+
+            if (isNaN(parsedDateTime.getTime())) {
+               throw new Error(`Unparseable combined date/time format: '${dateTimeString}'`);
+            }
+            // The Date object should now be valid, allowing .toISOString() later
 
         } catch (e: any) {
-            const message = `Failed to parse event_date: ${e.message}`;
+            const message = `Failed to parse event date/time: ${e.message}`;
             console.error(`${message} (Row ${rowNum})`);
-            processingErrors.push({ type: 'event', row: rowNum, field: 'event_date', message: e.message });
+            processingErrors.push({ type: 'event', row: rowNum, field: 'event_date/event_time', message: e.message });
             return; // Skip this row
         }
 
@@ -144,7 +155,7 @@ async function upsertEventRecords(csvData: { data: EventCsvRow[]; errors: Proces
             eventId: event.event_id,       
             userId: event.user_id,
             eventType: event.event_type as NewEvent['eventType'], 
-            eventDate: parsedDate,                 
+            eventDate: parsedDateTime, // Use the combined, parsed Date object
             pointsAwarded: pointsAwarded,          
             relatedReferralCode: event.referral_code || null, 
             durationInMinutes: durationInMinutes,
