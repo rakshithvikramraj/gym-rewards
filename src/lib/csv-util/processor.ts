@@ -49,7 +49,7 @@ export async function parseCsvFile<T extends Record<string, any>>(
     return new Promise((resolve) => {
         Papa.parse<T>(text, {
             header: true,
-            skipEmptyLines: false,
+            skipEmptyLines: true,
             transformHeader: header => header.trim().toLowerCase().replace(/\s+/g, '_'), // Normalize headers
             complete: (result) => {
                 results = result.data.filter((row, index) => {
