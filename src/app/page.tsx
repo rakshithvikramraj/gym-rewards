@@ -1,103 +1,225 @@
-import Image from "next/image";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+'use client'; // Convert to Client Component
 
-export default function Home() {
+import React, { useState, useRef, FormEvent, JSX } from 'react';
+import Link from 'next/link';
+// import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Terminal, FileText, Gift, CheckCircle2, Dumbbell } from 'lucide-react';
+
+interface Feedback { type: 'success' | 'error'; message: string | JSX.Element; }
+
+export default function HomePage() {
+  const [userFile, setUserFile] = useState<File | null>(null);
+  const [eventFile, setEventFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false); // For CSV processing
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [processingComplete, setProcessingComplete] = useState(false);
+
+  const userFileInputRef = useRef<HTMLInputElement>(null);
+  const eventFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, fileType: 'user' | 'event') => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (fileType === 'user') setUserFile(file);
+      if (fileType === 'event') setEventFile(file);
+      setFeedback(null); 
+      setProcessingComplete(false); 
+    }
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!userFile || !eventFile) {
+      setFeedback({ type: 'error', message: 'Please select both user and event CSV files.' });
+      return;
+    }
+
+    setIsLoading(true);
+    setFeedback(null);
+    setProcessingComplete(false);
+
+    const formData = new FormData();
+    formData.append('userCsv', userFile); 
+    formData.append('eventCsv', eventFile); 
+
+    try {
+      const response = await fetch('/api/process-csv', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const userErrors = result.userResult?.errors || [];
+      const eventErrors = result.eventResult?.errors || [];
+      const allErrors = [...userErrors, ...eventErrors];
+
+      let feedbackMessage: string | JSX.Element = `Processed ${result.userResult?.processed || 0} user records and ${result.eventResult?.processed || 0} event records.`;
+      if (allErrors.length > 0) {
+        feedbackMessage = (
+          <div className="text-sm">
+            <p className="text-red-700 font-semibold">{feedbackMessage} Found {allErrors.length} issues:</p>
+            <ul className="list-disc list-inside mt-1 max-h-40 overflow-y-auto text-stone-700">
+              {allErrors.map((err: any, index: number) => (
+                <li key={index} className="text-xs">
+                  Row {err.row || 'N/A'} ({err.type}): {err.message}
+                  {err.field && ` (Field: ${err.field})`}
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+        setFeedback({ type: 'error', message: feedbackMessage });
+        setProcessingComplete(false);
+      } else {
+        setFeedback({ type: 'success', message: feedbackMessage });
+        setProcessingComplete(true); 
+        setUserFile(null);
+        setEventFile(null);
+        if (userFileInputRef.current) userFileInputRef.current.value = '';
+        if (eventFileInputRef.current) eventFileInputRef.current.value = '';
+      }
+
+    } catch (error: any) {
+      console.error('Upload failed:', error); 
+      setFeedback({ type: 'error', message: `Upload failed: ${error.message}` }); 
+      setProcessingComplete(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUploadAgain = () => {
+    setProcessingComplete(false);
+    setFeedback(null);
+    setUserFile(null);
+    setEventFile(null);
+    if (userFileInputRef.current) userFileInputRef.current.value = '';
+    if (eventFileInputRef.current) eventFileInputRef.current.value = '';
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className={`flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 bg-white text-black`}>
+     <Card className={`w-full max-w-xl bg-white border-2 border-black shadow-[8px_8px_0_0_#000] rounded-none`}>
+        <CardHeader className="text-center border-b-2 border-black p-6">
+          <div className={`mx-auto p-2 border-2 border-black bg-yellow-400 w-fit mb-4`}>
+            <Dumbbell className={`h-8 w-8 text-black`} />
+          </div>
+          <CardTitle className={`text-2xl font-bold text-black`}>My Gym Rewards</CardTitle>
+          <CardDescription className={`text-gray-600`}>Upload user & events data file.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6 p-6">
+          {!processingComplete ? (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* User File Input */}              <div className="space-y-2">
+                <Label htmlFor="userCsvFile" className={`flex items-center gap-2 font-semibold text-black`}>
+                  Load User Data:
+                </Label>
+                <Input
+                  id="userCsvFile"
+                  type="file"
+                  accept=".csv, text/csv"
+                  onChange={(e) => handleFileChange(e, 'user')}
+                  disabled={isLoading}
+                  ref={userFileInputRef}
+                  required
+                  className={`w-full rounded-none border-2 border-black bg-white text-black placeholder-gray-500 focus:border-black focus:ring-black file:mr-4 file:py-2 file:px-4 file:rounded-none file:border-0 file:border-r-2 file:border-black file:text-sm file:font-semibold file:bg-yellow-400 file:text-black hover:file:bg-yellow-300 transition-colors text-sm`}
+                />
+                {userFile && <p className={`text-xs text-gray-600 truncate pt-1`}>Selected: {userFile.name}</p>}
+              </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+              {/* Event File Input */}              
+              <div className="space-y-2">
+                <Label htmlFor="eventCsvFile" className={`flex items-center gap-2 font-semibold text-black`}>
+                  Load Event Data:
+                </Label>
+                <Input
+                  id="eventCsvFile"
+                  type="file"
+                  accept=".csv, text/csv"
+                  onChange={(e) => handleFileChange(e, 'event')}
+                  disabled={isLoading}
+                  ref={eventFileInputRef}
+                  required
+                  className={`w-full rounded-none border-2 border-black bg-white text-black placeholder-gray-500 focus:border-black focus:ring-black file:mr-4 file:py-2 file:px-4 file:rounded-none file:border-0 file:border-r-2 file:border-black file:text-sm file:font-semibold file:bg-yellow-400 file:text-black hover:file:bg-yellow-300 transition-colors text-sm`}
+                />
+                {eventFile && <p className={`text-xs text-gray-600 truncate pt-1`}>Selected: {eventFile.name}</p>}
+              </div>
+
+              {/* Feedback Area */}             
+              {feedback && (
+                <Alert variant={feedback.type === 'error' ? 'destructive' : 'default'} className={`animate-fadeIn rounded-none border-2 border-black ${feedback.type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`}>
+                    {feedback.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <Terminal className="h-4 w-4" />}
+                    <AlertTitle className="font-bold uppercase">{feedback.type === 'error' ? 'Error' : 'Status'}</AlertTitle>
+                    <AlertDescription className="mt-1">
+                      {feedback.message}
+                    </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Submit Button */}              <div className="flex justify-center pt-4">
+                {/* Neobrutalist Button: Accent bg, black text/border, hard shadow, transforms on hover/active */}                <Button
+                  type="submit"
+                  disabled={isLoading || !userFile || !eventFile}
+                  className={`w-full max-w-xs rounded-none border-2 border-black bg-yellow-400 text-black font-bold shadow-[4px_4px_0_0_#000] hover:shadow-[2px_2px_0_0_#000] active:shadow-[1px_1px_0_0_#000] disabled:opacity-60 disabled:shadow-[4px_4px_0_0_#9ca3af] disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-150 ease-in-out px-6 py-2 text-sm`}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="inline-block h-3 w-3 animate-spin border-2 border-black border-t-transparent rounded-full"></span>
+                      PROCESSING...
+                    </span>
+                  ) : (
+                    <span className='flex items-center justify-center gap-2'>
+                       <FileText className="h-4 w-4 inline-block" /> PROCESS FILES
+                    </span>
+                  )}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            // --- Completion State ---             
+            <div className="text-center space-y-6 animate-fadeIn p-6">
+              <CheckCircle2 className={`mx-auto h-12 w-12 text-green-600`} />
+              <h3 className="text-xl font-bold text-black">Processing Complete!</h3>
+              {feedback && feedback.type === 'success' && (
+                 <Alert className={`rounded-none border-2 border-black bg-green-500 text-white`}>
+                    <CheckCircle2 className="h-4 w-4" />
+                    <AlertTitle className="font-bold uppercase">Status</AlertTitle>
+                    <AlertDescription className="mt-1 text-sm">
+                      {feedback.message}
+                    </AlertDescription>
+                  </Alert>
+              )}
+              {/* Button to Upload More Files */}             
+               <Button
+                onClick={handleUploadAgain}
+                className={`w-full max-w-xs rounded-none border-2 border-black bg-white text-black font-bold shadow-[4px_4px_0_0_#000] hover:shadow-[2px_2px_0_0_#000] active:shadow-[1px_1px_0_0_#000] transition-all duration-150 ease-in-out px-6 py-2 text-sm`}
+              >
+                Upload More Files
+              </Button>
+              {/* Button to View Users/Coupons Page */}
+              <Link href="/coupons" passHref>
+                <Button
+                  variant="outline"
+                  className={`w-full max-w-xs rounded-none border-2 border-black bg-yellow-400 text-black font-bold shadow-[4px_4px_0_0_#000] hover:shadow-[2px_2px_0_0_#000] active:shadow-[1px_1px_0_0_#000] transition-all duration-150 ease-in-out px-6 py-2 text-sm mt-4`}
+                >
+                  <Gift className="h-4 w-4 mr-2" /> View Users & Generate Coupons
+                </Button>
+              </Link>
+             </div>
+          )}
+        </CardContent>
+      </Card>
+    </main>
   );
 }

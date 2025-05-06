@@ -1,0 +1,1 @@
+ALTER TABLE "events" ALTER COLUMN "points_awarded" DROP NOT NULL;

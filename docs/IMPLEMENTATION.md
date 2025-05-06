@@ -139,3 +139,5 @@ Define the PostgreSQL database schema using Drizzle ORM schemas. Ensure the conn
 *   **Coupon Expiry & Notifications:** Implement expiry logic using scheduled tasks or database triggers.
 *   **Advanced Analytics:** Track reward effectiveness using SQL queries.
 *   **Better Auth Plugins:** Explore Better Auth's plugin ecosystem for additional features (e.g., 2FA for admins, advanced role management).
+# .env.local
+DATABASE_URL="your_neon_db_connection_string_here"
