@@ -6,16 +6,15 @@ This project is a web application built with Next.js for managing users and gene
 
 ## Architecture Diagram
 
-```mermaid
 graph TD
-    A[User Browser] -- HTTP Request --> B(Next.js Frontend - Pages);
-    B -- Server Component/Client Component --> C{Next.js Backend};
-    C -- API Call --> D[API Routes (/api/*)];
-    D -- Drizzle ORM --> E[(PostgreSQL Database)];
-    B -- Renders UI --> A;
-    F[CSV Upload] -- /api/process-csv --> D;
-    D -- Generate Image Request --> G[External AI Image API];
-    G -- Image URL --> D;
+    A[User Browser] --> |HTTP Request| B(Next.js Frontend - Pages)
+    B --> |Server Component/Client Component| C{Next.js Backend}
+    C --> |API Call| D[API Routes (/api/*)]
+    D --> |Drizzle ORM| E[(PostgreSQL Database)]
+    B --> |Renders UI| A
+    F[CSV Upload] --> |/api/process-csv| D
+    D --> |Generate Image Request| G[External AI Image API]
+    G --> |Image URL| D
 
     subgraph Next.js App
         B
@@ -25,7 +24,6 @@ graph TD
 
     style E fill:#f9f,stroke:#333,stroke-width:2px
     style G fill:#ccf,stroke:#333,stroke-width:2px
-```
 
 *   **Frontend:** Next.js Pages/Components (React) handle user interaction and display data.
 *   **Backend:** Next.js API Routes handle business logic, data processing, and database interactions.
