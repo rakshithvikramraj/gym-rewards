@@ -6,6 +6,7 @@ This project is a web application built with Next.js for managing users and gene
 
 ## Architecture Diagram
 
+```mermaid
 graph TD
     A[User Browser] --> |HTTP Request| B(Next.js Frontend - Pages)
     B --> |Server Component/Client Component| C{Next.js Backend}
@@ -24,6 +25,7 @@ graph TD
 
     style E fill:#f9f,stroke:#333,stroke-width:2px
     style G fill:#ccf,stroke:#333,stroke-width:2px
+```
 
 *   **Frontend:** Next.js Pages/Components (React) handle user interaction and display data.
 *   **Backend:** Next.js API Routes handle business logic, data processing, and database interactions.
